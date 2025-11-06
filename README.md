@@ -1,65 +1,47 @@
-# Anonimizacao-de-pessoas
-# 🔐 Projeto: Anonimização de Dados com Machine Learning
-
-## 🧠 Visão Geral
-
-Este projeto demonstra, de forma prática, como dados pessoais sensíveis podem ser utilizados para identificar indivíduos — e, mais importante ainda, como podemos **proteger essas informações** por meio de **técnicas de anonimização** e **aprendizado de máquina (ML)**.
-
----
-
-## 🎯 Objetivo
-
-1. **Parte 1 – Identificação**  
-   Criar um modelo simples que, com base em dados como **nome**, **idade** e **imposto de renda**, consiga identificar pessoas.
-
-2. **Parte 2 – Anonimização**  
-   Aplicar técnicas como **hashing**, **generalização** e **perturbação de dados** para tornar impossível a reidentificação dos mesmos indivíduos.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-- Python 3.10+
-- Pandas
-- Scikit-learn
-- Faker (para gerar dados fictícios)
-- hashlib (para anonimização via hash)
-
----
-
-## 📦 Estrutura do Projeto
-
-
----
-
-## 🧪 Etapa 1: Identificação
-
-```python
-# identificacao.py
-import pandas as pd
-
-# Carrega os dados
-df = pd.read_csv('dados/base_simulada.csv')
-
-# Exibe os dados sensíveis
-print("🔍 Dados sensíveis identificáveis:")
-print(df[['nome', 'idade', 'imposto_renda']])
-# anonimiza.py
 import pandas as pd
 import hashlib
+import random
+from faker import Faker
 
-# Função para anonimizar nomes
+# Inicializa gerador de dados fictícios
+fake = Faker('pt_BR')
+
+# Gera dados simulados
+def gerar_dados(qtd=10):
+    dados = []
+    for _ in range(qtd):
+        nome = fake.name()
+        idade = random.randint(18, 80)
+        imposto_renda = round(random.uniform(10000, 100000), 2)
+        dados.append({'nome': nome, 'idade': idade, 'imposto_renda': imposto_renda})
+    return pd.DataFrame(dados)
+
+# Função para anonimizar nome com SHA-256
 def hash_nome(nome):
     return hashlib.sha256(nome.encode()).hexdigest()
 
-# Carrega os dados
-df = pd.read_csv('dados/base_simulada.csv')
+# Função para generalizar idade por faixa
+def generalizar_idade(idade):
+    return f"{(idade // 10) * 10}s"
+
+# Função para perturbar imposto de renda
+def perturbar_renda(renda):
+    ruido = random.uniform(-500, 500)
+    return round(renda + ruido, 2)
+
+# Gera e exibe dados originais
+df_original = gerar_dados(10)
+print("🔍 Dados identificáveis:")
+print(df_original)
 
 # Aplica anonimização
-df['nome'] = df['nome'].apply(hash_nome)
-df['idade'] = df['idade'].apply(lambda x: f"{(x//10)*10}s")  # Generalização por faixa etária
-df['imposto_renda'] = df['imposto_renda'] + 500 * (0.5 - pd.np.random.rand(len(df)))  # Perturbação
+df_anonimizado = df_original.copy()
+df_anonimizado['nome'] = df_anonimizado['nome'].apply(hash_nome)
+df_anonimizado['idade'] = df_anonimizado['idade'].apply(generalizar_idade)
+df_anonimizado['imposto_renda'] = df_anonimizado['imposto_renda'].apply(perturbar_renda)
 
 # Exibe dados anonimizados
-print("✅ Dados anonimizados:")
+print("\n✅ Dados anonimizados:")
+print(df_anonimizado)
+
 print(df)
